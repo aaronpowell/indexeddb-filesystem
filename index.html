@@ -1,0 +1,131 @@
+<!doctype html>
+<html>
+    <style>
+        ul {
+            list-style: none;
+        }
+    </style>
+
+    <body>
+        <form action="">
+            <ul>
+                <li>
+                    <label for="nane">Name: </label>
+                    <input type="text" id="name">
+                </li>
+                <li>
+                    <label for="type">Type: </label>
+                    <select name="" id="type">
+                        <option value="d">Directory</option>
+                        <option value="f">File</option>
+                    </select>
+                </li>
+                <li>
+                    Path: <span id="path"></span>
+                </li>
+                <li>
+                    <button type="submit">Save</button>
+                </li>
+            </ul>
+        </form>
+
+        <h2>File system structure</h2>
+        <ul>
+            <li>
+                /
+                <ul id="fileSystem">
+                </ul>
+            </li>
+        </ul>
+        <script>
+            (function (drop) {
+                'use strict';
+                var dbName = 'indexeddb-fs';
+                var storeName = 'fs';
+                var db;
+
+                var currentFolder = -1;
+
+                if (drop) {
+                    indexedDB.deleteDatabase(dbName).onsuccess = function () {
+                        console.log('the db has been dropped');
+                    };
+                }
+
+                var req = indexedDB.open(dbName, 1);
+                req.onupgradeneeded = function (e) {
+                    var db = e.target.result;
+
+                    db.createObjectStore(storeName, {
+                        keyPath: 'id',
+                        autoIncrement: true
+                    });
+                };
+
+                req.onsuccess = function (e) {
+                    db = e.target.result;
+                    console.log('db is ready for use');
+                };
+
+                req.onerror = function (e) {
+                    console.error('Error opening the database', e);
+                };
+
+                var fileSystem = document.getElementById('fileSystem');
+                fileSystem.parentElement.addEventListener('click', function (e) {
+                    currentFolder = e.target.id;
+                    var path = [];
+
+                    var p = e.target;
+                    path.push(p.getAttribute('data-name'));
+                    while ((p = p.parentElement) !== fileSystem) {
+                        path.push(p.getAttribute('data-name'));
+                    }
+
+                    document.getElementById('path').innerHTML = '/' + path.reverse().filter(function (x) { return !!x; }).join('/');
+                });
+
+                var form = document.getElementsByTagName('form')[0];
+                form.addEventListener('submit', function (e) {
+                    console.log('saving...');
+                    e.preventDefault();
+
+                    var name = document.getElementById('name').value;
+                    var type = document.getElementById('type').value;
+
+                    var transaction = db.transaction(storeName, 'readwrite');
+                    var store = transaction.objectStore(storeName);
+
+                    store.add({
+                        name: name,
+                        type: type,
+                        parent: currentFolder
+                    }).onsuccess = function (e) {
+                        var item = e.target.result;
+
+                        console.log('added item', item);
+                
+                        var elm = document.createElement('li');
+                        elm.innerHTML = name;
+                        elm.setAttribute('id', item);
+                        elm.setAttribute('data-name', name);
+
+                        if (currentFolder === -1) { // we're at the FS root
+                            fileSystem.appendChild(elm);
+                        } else {
+                            var parent = document.getElementById(currentFolder + '-ul');
+                            parent.appendChild(elm);
+                        }
+
+                        if (type === 'd') { // just created a directory
+                            var ul = document.createElement('ul');
+                            ul.setAttribute('id', item + '-ul');
+                            elm.appendChild(ul);
+                        }
+                    };
+                });
+            })(true);
+        </script>
+
+    </body>
+</html>
