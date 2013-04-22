@@ -1,0 +1,21 @@
+{
+  "name": "indexeddb-fs",
+  "version": "0.0.0",
+  "description": "This is a sample of how to implement a file system on top of IndexedDB. If you're running this locally you'll want to use `node app` so that the server will run (since most browser require IndexedDB to run against a domain).",
+  "main": "app.js",
+  "dependencies": {
+    "express": "~3.2.0"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/aaronpowell/indexeddb-filesystem.git"
+  },
+  "keywords": [
+    "indexeddb"
+  ],
+  "author": "Aaron Powell <me@aaron-powell.com>",
+  "license": "MIT",
+  "gitHead": "7e14b2d993870414c15c048fee59495d639c0a24",
+  "readmeFilename": "readme.md"
+}
