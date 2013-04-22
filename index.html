@@ -65,6 +65,70 @@
                 req.onsuccess = function (e) {
                     db = e.target.result;
                     console.log('db is ready for use');
+
+                    var items = [];
+                    db.transaction(storeName)
+                        .objectStore(storeName)
+                        .openCursor()
+                        .onsuccess = function (e) {
+                            var cursor = e.target.result;
+
+                            if (cursor) {
+                                items.push(cursor.value);
+                                cursor['continue']();
+                            } else {
+                                var folders = items.filter(function (item) { 
+                                    return item.type === 'd';
+                                }).map(function (dir) {
+                                    var elm = document.createElement('li');
+                                    elm.innerHTML = dir.name;
+                                    elm.setAttribute('id', dir.id);
+                                    elm.setAttribute('data-name', dir.name);
+
+                                    var ul = document.createElement('ul');
+                                    ul.setAttribute('id', dir.id + '-ul');
+                                    elm.appendChild(ul);
+
+                                    return {
+                                        id: dir.id,
+                                        parent: dir.parent,
+                                        elm: elm
+                                    };
+                                });
+
+                                folders.filter(function (dir) {
+                                    return dir.parent != -1;
+                                }).map(function (dir) {
+                                    var parent = folders.filter(function (p) {
+                                        return p.id == dir.parent;
+                                    })[0];
+
+                                    parent.elm.appendChild(dir.elm);
+                                    return dir;
+                                });
+
+                                folders.filter(function (dir) {
+                                    return dir.parent == -1;
+                                }).map(function (dir) {
+                                    fileSystem.appendChild(dir.elm);
+                                    return dir.elm;
+                                });
+
+                                items.filter(function (item) {
+                                    return item.type === 'f';
+                                }).map(function (file) {
+                                    var elm = document.createElement('li');
+                                    elm.innerHTML = file.name;
+                                    elm.setAttribute('id', file.id);
+                                    elm.setAttribute('data-name', file.name);
+
+                                    var folder = folders.filter(function (dir) {
+                                        return dir.id == file.parent;
+                                    })[0];
+                                    folder.elm.children[0].appendChild(elm);
+                                });
+                            }
+                        };
                 };
 
                 req.onerror = function (e) {
@@ -124,7 +188,7 @@
                         }
                     };
                 });
-            })(true);
+            })(false);
         </script>
 
     </body>
